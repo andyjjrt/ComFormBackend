@@ -6,8 +6,11 @@ urlpatterns = [
     path('logout/', account.Logout.as_view(), name="logout"),
     path('register/', account.Register.as_view(), name="register"),
     path('profile/', account.Profile.as_view(), name="profile"),
+    path('profile/avatar', account.AvatarUpdate.as_view(), name="avatar upload"),
     
     path('form/', form.Get.as_view(), name="Form Get"),
     path('form/create', form.Create.as_view(), name="Form Create"),
-    path('form/delete', form.Delete.as_view(), name="Form Delete")
+    path('form/delete', form.Delete.as_view(), name="Form Delete"),
+    path('form/edit', form.Edit.as_view(), name="Form Edit")
+
 ]

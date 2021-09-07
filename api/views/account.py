@@ -1,12 +1,14 @@
+from genericpath import isfile
 from django.views.generic.base import View
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.contrib import auth
+from django.conf import settings
 
 from util.api import APIResponse
+from api.forms import ImageUploadForm
 
-import json
-import re 
+import json, re, os, uuid
 
 class Login(View):
     def post(self, request):
@@ -52,12 +54,42 @@ class Profile(View):
         if request.user.is_authenticated:
             userform = []
             for i in request.user.form_set.all():
-                userform.append(i.dict())
+                userform.append(i.profile_dict())
             data = {
                 "username": request.user.username,
                 "email": request.user.email,
+                "avatar": request.user.profile.avatar.url,
                 "forms": userform
             }
             return APIResponse.success(data)
         else:
             return APIResponse.success({})
+
+class AvatarUpdate(View):
+    def post(self, request):
+        form = ImageUploadForm(request.POST, request.FILES)
+        user_profile = request.user.profile
+        if form.is_valid():
+            avatar = form.cleaned_data["image"]
+        else:
+            return APIResponse.error("Invalid file content")
+        if avatar.size > 2 * 1024 * 1024:
+            return APIResponse.error("Picture is too large")
+        suffix = os.path.splitext(avatar.name)[-1].lower()
+        if suffix not in [".gif", ".jpg", ".jpeg", ".bmp", ".png"]:
+            return APIResponse.error("Unsupported file format")
+
+        name = str(uuid.uuid4()) + suffix
+
+        #delete img
+        #if(os.path.isfile(user_profile.avatar.path)):
+        #    os.remove(user_profile.avatar.path)
+
+        #save img
+        with open(os.path.join(settings.MEDIA_ROOT, 'avatar', name), "wb") as img:
+            for chunk in avatar:
+                img.write(chunk)
+
+        user_profile.avatar = f"avatar/{name}"
+        user_profile.save()
+        return APIResponse.success("Succeeded")

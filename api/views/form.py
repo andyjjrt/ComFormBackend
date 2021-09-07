@@ -41,3 +41,30 @@ class Delete(View):
                 return APIResponse.error()
         else:
             return APIResponse.error("Please login first")
+
+class Edit(View):
+    def post(self, request):
+        body = json.loads(request.body.decode('utf-8'))
+        id = body['id']
+        title = body['title']
+        description = body['description']
+        box = body['box']
+        start_id = body["start_id"]
+        if id == "":
+            return APIResponse.error('id cannot be blank')
+        if request.user.is_authenticated:
+            try:
+                form = FormModel.objects.get(id=id)
+                if form.author == request.user:
+                    form.title = title
+                    form.description = description
+                    form.box = box
+                    form.start_id = (start_id == "") if None else start_id
+                    form.save()
+                    return APIResponse.success("succeed")
+                else:
+                    return APIResponse.error("You can't delete a form that is not yours")
+            except:
+                return APIResponse.error()
+        else:
+            return APIResponse.error("Please login first")
